@@ -172,12 +172,18 @@ export class PhysicsEngine {
     const points = [];
     const startAngle = Math.PI;
     const endAngle = 0;
-
-    const r = radiusFromSpeed;
+    const insetFactor = 0.09;
+    const roadWidth = 12;
+    const maxRadius = radius + roadWidth / 2 - 1;
 
     for (let i = 0; i <= segments; i++) {
       const t = i / segments;
       const angle = startAngle + (endAngle - startAngle) * t;
+
+      const dynamicInset = Math.sin(Math.PI - angle) * insetFactor * radius;
+      let r = radiusFromSpeed - dynamicInset;
+
+      r = Math.min(r, maxRadius);
 
       const x = r * (1 + Math.cos(angle));
       const z = r * Math.sin(angle);

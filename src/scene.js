@@ -32,8 +32,8 @@ export class Scene3D {
 
   init() {
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x1a1a2e);
-    this.scene.fog = new THREE.Fog(0x1a1a2e, 100, 500);
+    this.scene.background = new THREE.Color('#105057');
+    this.scene.fog = new THREE.Fog('#105057', 100, 500);
 
     this.camera = new THREE.PerspectiveCamera(
       60,
@@ -67,7 +67,7 @@ export class Scene3D {
   }
 
   setupLighting() {
-    const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+    const ambientLight = new THREE.AmbientLight(0x400036, 0.9);
     this.scene.add(ambientLight);
 
     const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
@@ -83,14 +83,14 @@ export class Scene3D {
     directionalLight.shadow.camera.bottom = -100;
     this.scene.add(directionalLight);
 
-    const hemisphereLight = new THREE.HemisphereLight(0x87ceeb, 0x3d5c5c, 0.4);
+    const hemisphereLight = new THREE.HemisphereLight(0x400036, 0x400036, 0.4);
     this.scene.add(hemisphereLight);
   }
 
   createGround() {
-    const groundGeometry = new THREE.PlaneGeometry(400, 400);
+    const groundGeometry = new THREE.PlaneGeometry(1000, 1000);
     const groundMaterial = new THREE.MeshStandardMaterial({
-      color: 0x2d3436,
+      color: 0x400036,
       roughness: 0.9,
       metalness: 0.1,
     });
@@ -100,7 +100,7 @@ export class Scene3D {
     ground.receiveShadow = true;
     this.scene.add(ground);
 
-    const gridHelper = new THREE.GridHelper(400, 40, 0x636e72, 0x636e72);
+    const gridHelper = new THREE.GridHelper(1000, 400, 0x636e72, 0x636e72);
     gridHelper.position.y = 0;
     this.scene.add(gridHelper);
   }
@@ -262,7 +262,7 @@ export class Scene3D {
     this.roadMeshes.forEach((mesh) => this.scene.remove(mesh));
     this.roadMeshes = [];
 
-    const roadWidth = 12;
+    const roadWidth = 15;
     const segments = 64;
     const startAngle = Math.PI;
     const endAngle = 0;

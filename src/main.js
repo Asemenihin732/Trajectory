@@ -17,6 +17,10 @@ class VehicleSimulator {
     this.scene3D = new Scene3D(container);
     this.ui = new UIController();
 
+    this.params = this.ui.getParams();
+    this.scene3D.setupTrajectory(this.params.radius, this.params.showRacingLine, this.params.radiusFromSpeed);
+    this.scene3D.setupRoad(this.params.radius, this.params.bankAngle);
+
     this.setupUICallbacks();
     this.setupSceneCallbacks();
   }
@@ -30,8 +34,8 @@ class VehicleSimulator {
 
     this.ui.on('onRadiusChange', (radius) => {
       if (!this.isRunning) {
-        // this.params.radius = radius || 50;
         this.scene3D.setupRoad(radius, this.params?.bankAngle || 0);
+        this.params = { ...this.params, radius };
       }
     });
 
@@ -39,22 +43,25 @@ class VehicleSimulator {
       if (!this.isRunning) {
         const radius = this.params?.radius || 50;
         this.scene3D.setupRoad(radius, bankAngle);
+        this.params = { ...this.params, bankAngle };
       }
     });
 
     this.ui.on('onRacingLineToggle', (show, radiusFromSpeed) => {
-      const radius = this.params?.radius || 50;
+      const params = this.ui.getParams();
+      const radius = params?.radius || 50;
       this.scene3D.setupTrajectory(radius, show, radiusFromSpeed);
     });
 
     this.ui.on('onForceToggle', (show) => {
-      if (this.params) {
+      const params = this.ui.getParams();
+      if (params) {
         this.scene3D.updateForceVectors(
           show,
-          this.params.speed,
-          this.params.mu,
-          this.params.radius,
-          this.params.bankAngle,
+          params.speed,
+          params.mu,
+          params.radius,
+          params.bankAngle,
         );
       }
     });
@@ -76,19 +83,19 @@ class VehicleSimulator {
   }
 
   startSimulation(params) {
-    this.params = params;
+    this.params = { ...params };
     this.isRunning = true;
     this.lastTime = performance.now();
 
-    this.scene3D.startSimulation(params, params.isStable);
+    this.scene3D.startSimulation(this.params, this.params.isStable);
 
-    if (params.showForces) {
+    if (this.params.showForces) {
       this.scene3D.updateForceVectors(
         true,
-        params.speed,
-        params.mu,
-        params.radius,
-        params.bankAngle,
+        this.params.speed,
+        this.params.mu,
+        this.params.radius,
+        this.params.bankAngle,
       );
     }
 
@@ -97,22 +104,20 @@ class VehicleSimulator {
   }
 
   animate() {
-    if (!this.isRunning) return;
+    if (!this.isRunning || !this.params) return;
 
     const currentTime = performance.now();
     const dt = (currentTime - this.lastTime) / 1000;
     this.lastTime = currentTime;
 
-    if (this.params) {
-      this.scene3D.updateSimulation(dt, this.params, this.params.isStable);
-      this.scene3D.updateForceVectors(
-        this.params.showForces,
-        this.params.speed,
-        this.params.mu,
-        this.params.radius,
-        this.params.bankAngle,
-      );
-    }
+    this.scene3D.updateSimulation(dt, this.params, this.params.isStable);
+    this.scene3D.updateForceVectors(
+      this.params.showForces,
+      this.params.speed,
+      this.params.mu,
+      this.params.radius,
+      this.params.bankAngle,
+    );
 
     this.animationId = requestAnimationFrame(() => this.animate());
   }
@@ -125,6 +130,7 @@ class VehicleSimulator {
 
     if (this.params) {
       this.scene3D.setupRoad(this.params.radius, this.params.bankAngle);
+      this.scene3D.setupTrajectory(this.params.radius, this.params.showRacingLine, this.params.radiusFromSpeed);
     }
 
     this.scene3D.reset();
