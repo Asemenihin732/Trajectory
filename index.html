@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vehicle Turn Simulator</title>
+  <link rel="stylesheet" href="/src/styles.css">
+</head>
+<body>
+  <div id="app">
+    <div id="canvas-container"></div>
+    <div id="ui-panel">
+      <h1>Симулятор прохождения поворота</h1>
+      
+      <div class="control-section">
+        <h3>Тип транспортного средства</h3>
+        <select id="vehicle-type">
+          <option value="car">Легковой автомобиль</option>
+          <option value="truck">Грузовик</option>
+          <option value="motorcycle">Мотоцикл</option>
+        </select>
+      </div>
+
+      <div class="control-section">
+        <h3>Параметры</h3>
+        
+        <label>Масса (кг): <span id="mass-value">1500</span></label>
+        <input type="range" id="mass" min="500" max="40000" value="1500" step="50">
+        
+        <label>Скорость (км/ч): <span id="speed-value">60</span></label>
+        <input type="range" id="speed" min="10" max="200" value="60" step="5">
+        
+        <label>Радиус поворота (м): <span id="radius-value">50</span></label>
+        <input type="range" id="radius" min="10" max="200" value="50" step="5">
+        
+        <label>Угол наклона (град.): <span id="bank-value">0</span></label>
+        <input type="range" id="bank" min="-30" max="30" value="0" step="1">
+      </div>
+
+      <div class="control-section">
+        <h3>Тип поверхности</h3>
+        <select id="surface-type">
+          <option value="dry_asphalt">Сухой асфальт (μ=0.8)</option>
+          <option value="wet_asphalt">Мокрый асфальт (μ=0.5)</option>
+          <option value="snow">Снег (μ=0.3)</option>
+          <option value="ice">Лед (μ=0.15)</option>
+        </select>
+      </div>
+
+      <div class="control-section">
+        <h3>Траектория</h3>
+        <label>
+          <input type="checkbox" id="racing-line"> Траектория опт. скорости
+        </label>
+        <label>
+          <input type="checkbox" id="show-forces"> Показать силы
+        </label>
+      </div>
+
+      <div class="control-section">
+        <button id="start-btn">Запуск</button>
+        <button id="reset-btn">Сброс</button>
+      </div>
+
+      <div class="info-section">
+        <h3>Физика</h3>
+        <div class="info-row">
+          <span>Мах безопасная скорость:</span>
+          <span id="max-speed">0 km/h</span>
+        </div>
+        <div class="info-row">
+          <span>Безопасный радиус:</span>
+          <span id="radius-from-speed">0 m</span>
+        </div>
+        <div class="info-row">
+          <span>а_центр:</span>
+          <span id="acceleration">0 м/с²</span>
+        </div>
+        <div class="info-row">
+          <span>Status:</span>
+          <span id="status">Stable</span>
+        </div>
+        <div class="info-row" style="display: none;">
+          <span>Safety Margin:</span>
+          <span id="safety-margin">0%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

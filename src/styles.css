@@ -1,0 +1,258 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #0a0a0f;
+  color: #e0e0e0;
+  overflow: hidden;
+}
+
+#app {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+}
+
+#canvas-container {
+  flex: 1;
+  position: relative;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+}
+
+#canvas-container canvas {
+  display: block;
+}
+
+#ui-panel {
+  width: 320px;
+  background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+  padding: 20px;
+  overflow-y: auto;
+  border-left: 1px solid #2d3436;
+  box-shadow: -5px 0 20px rgba(0, 0, 0, 0.3);
+}
+
+#ui-panel h1 {
+  font-size: 1.4rem;
+  margin-bottom: 20px;
+  color: #00d4ff;
+  text-align: center;
+  text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+}
+
+.control-section {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.control-section h3 {
+  font-size: 0.9rem;
+  margin-bottom: 12px;
+  color: #00d4ff;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.3);
+  padding-bottom: 8px;
+}
+
+.control-section label {
+  display: block;
+  font-size: 0.85rem;
+  margin-bottom: 5px;
+  color: #b0b0b0;
+}
+
+.control-section label span {
+  color: #00d4ff;
+  font-weight: bold;
+}
+
+select, input[type="range"] {
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+select {
+  padding: 10px;
+  background: #2d3436;
+  border: 1px solid #636e72;
+  border-radius: 5px;
+  color: #fff;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: border-color 0.3s;
+}
+
+select:hover {
+  border-color: #00d4ff;
+}
+
+select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  background: #2d3436;
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  background: #00d4ff;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+  transition: transform 0.2s;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  background: #00d4ff;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+}
+
+input[type="range"]:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+input[type="range"]:disabled::-webkit-slider-thumb {
+  cursor: not-allowed;
+}
+
+input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin-right: 10px;
+  cursor: pointer;
+  accent-color: #00d4ff;
+}
+
+.control-section button {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 10px;
+  border: none;
+  border-radius: 5px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+#start-btn {
+  background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%);
+  color: #000;
+}
+
+#start-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 20px rgba(0, 212, 255, 0.4);
+}
+
+#start-btn:disabled {
+  background: #636e72;
+  cursor: not-allowed;
+  transform: none;
+}
+
+#reset-btn {
+  background: #e74c3c;
+  color: #fff;
+}
+
+#reset-btn:hover {
+  background: #c0392b;
+}
+
+.info-section {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 10px;
+  padding: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.info-section h3 {
+  font-size: 0.9rem;
+  margin-bottom: 12px;
+  color: #00d4ff;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.3);
+  padding-bottom: 8px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-row span:first-child {
+  color: #b0b0b0;
+  font-size: 0.85rem;
+}
+
+.info-row span:last-child {
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+  #app {
+    flex-direction: column;
+  }
+
+  #ui-panel {
+    width: 100%;
+    height: 50vh;
+    border-left: none;
+    border-top: 1px solid #2d3436;
+  }
+
+  #canvas-container {
+    height: 50vh;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1a2e;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #00d4ff;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #0099cc;
+}
