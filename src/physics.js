@@ -1,10 +1,18 @@
 const G = 9.81;
+const REFERENCE_MASS = 1500;
 
 const SURFACE_COEFFICIENTS = {
   dry_asphalt: 0.8,
-  wet_asphalt: 0.5,
+  wet_asphalt: 0.7,
   snow: 0.3,
   ice: 0.15,
+};
+
+const MASS_FRICTION_PARAMS = {
+  dry_asphalt: { k: 0.08, curve: 'log' },
+  wet_asphalt: { k: 0.09, curve: 'log' },
+  snow: { k: 0.18, curve: 'log' },
+  ice: { k: 0.25, curve: 'log' },
 };
 
 const VEHICLE_DEFAULTS = {
@@ -34,35 +42,66 @@ export class PhysicsEngine {
     return VEHICLE_DEFAULTS[type] || VEHICLE_DEFAULTS.car;
   }
 
+  calculateEffectiveFrictionCoefficient(baseMu, mass, surfaceType) {
+    const params = MASS_FRICTION_PARAMS[surfaceType] || { k: 0.1, curve: 'log' };
+    const massRatio = mass / REFERENCE_MASS;
+
+    let effectiveMu;
+
+    switch (params.curve) {
+      case 'log':
+        effectiveMu = baseMu * (1 - params.k * Math.log(massRatio));
+        break;
+      case 'sqrt':
+        effectiveMu = baseMu * (1 - params.k * (1 - 1 / Math.sqrt(massRatio)));
+        break;
+      case 'power':
+        effectiveMu = baseMu * Math.pow(massRatio, -params.k);
+        break;
+      case 'linear':
+      default:
+        effectiveMu = baseMu * (1 - params.k * (massRatio - 1));
+        break;
+    }
+
+    return Math.max(effectiveMu, baseMu * 0.3);
+  }
+
   calculateCentripetalAcceleration(speedKmh, radius) {
     const v = this.kmhToMs(speedKmh);
     return (v * v) / radius;
   }
 
-  calculateRadiusFromSpeed(speedKmh, mu) {
+  calculateRadiusFromSpeed(speedKmh, mu, mass, surfaceType) {
     const v = this.kmhToMs(speedKmh);
-    return (v * v) / (mu * this.g);
+    const effectiveMu = this.calculateEffectiveFrictionCoefficient(mu, mass, surfaceType);
+    return (v * v) / (effectiveMu * this.g);
   }
 
-  calculateMaxSpeedFlat(mu, radius) {
-    const vMaxMs = Math.sqrt(mu * this.g * radius);
-    console.log(`Max Speed (flat): ${this.msToKmh(vMaxMs)} km/h`);
+  calculateMaxSpeedFlat(mu, radius, mass, surfaceType) {
+    const effectiveMu = this.calculateEffectiveFrictionCoefficient(mu, mass, surfaceType);
+    const vMaxMs = Math.sqrt(effectiveMu * this.g * radius);
     return this.msToKmh(vMaxMs);
   }
 
-  calculateMaxSpeedWithBank(mu, radius, bankAngleDeg) {
+  calculateMaxSpeedWithBank(mu, radius, bankAngleDeg, mass, surfaceType) {
     const theta = (bankAngleDeg * Math.PI) / 180;
     const sinTheta = Math.sin(theta);
     const cosTheta = Math.cos(theta);
 
+    const effectiveMu = this.calculateEffectiveFrictionCoefficient(mu, mass, surfaceType);
+    const massEffect = Math.pow(mass / REFERENCE_MASS, 0.35);
+
     if (bankAngleDeg === 0) {
-      return this.calculateMaxSpeedFlat(mu, radius);
+      return this.calculateMaxSpeedFlat(mu, radius, mass, surfaceType);
     }
-    if (Math.abs(cosTheta - mu * sinTheta) < 0.001) {
+    if (Math.abs(cosTheta - effectiveMu * sinTheta) < 0.001) {
       return Infinity;
     }
 
-    const vSquared = (radius * this.g * (sinTheta + mu * cosTheta)) / (cosTheta - mu * sinTheta);
+    const vSquared =
+      (radius * this.g * massEffect * (sinTheta + effectiveMu * cosTheta)) /
+      (cosTheta - effectiveMu * sinTheta);
 
     if (vSquared < 0) {
       return 0;
@@ -71,14 +110,17 @@ export class PhysicsEngine {
     return this.msToKmh(Math.sqrt(vSquared));
   }
 
-  calculateStability(speedKmh, mu, radius, bankAngleDeg) {
+  calculateStability(speedKmh, mu, radius, bankAngleDeg, mass, surfaceType) {
+    const effectiveMu = this.calculateEffectiveFrictionCoefficient(mu, mass, surfaceType);
+
     let maxSpeed;
     if (bankAngleDeg === 0) {
-      maxSpeed = this.calculateMaxSpeedFlat(mu, radius);
+      maxSpeed = this.calculateMaxSpeedFlat(mu, radius, mass, surfaceType);
     } else {
-      maxSpeed = this.calculateMaxSpeedWithBank(mu, radius, bankAngleDeg);
+      maxSpeed = this.calculateMaxSpeedWithBank(mu, radius, bankAngleDeg, mass, surfaceType);
     }
-    const radiusFromSpeed = this.calculateRadiusFromSpeed(speedKmh, mu);
+
+    const radiusFromSpeed = this.calculateRadiusFromSpeed(speedKmh, mu, mass, surfaceType);
     const safetyMargin = ((maxSpeed - speedKmh) / maxSpeed) * 100;
     const isStable = speedKmh <= maxSpeed;
     const acceleration = this.calculateCentripetalAcceleration(speedKmh, radius);
@@ -101,6 +143,7 @@ export class PhysicsEngine {
       safetyMargin,
       isStable,
       centripetalAcceleration: acceleration,
+      effectiveMu,
       status,
     };
   }
@@ -174,7 +217,8 @@ export class PhysicsEngine {
     const endAngle = 0;
     const insetFactor = 0.09;
     const roadWidth = 12;
-    const maxRadius = radius + roadWidth / 2 - 1;
+    // const maxRadius = radius + roadWidth / 2 - 1;
+    const maxRadius = radiusFromSpeed;
 
     for (let i = 0; i <= segments; i++) {
       const t = i / segments;

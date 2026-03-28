@@ -32,16 +32,17 @@ export class Scene3D {
 
   init() {
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color('#105057');
-    this.scene.fog = new THREE.Fog('#105057', 100, 500);
+    this.scene.background = new THREE.Color('#b1b1b1');
+    this.scene.fog = new THREE.Fog('#909494', 1000, 3000);
 
+    // this.camera = new THREE.StereoCamera();
     this.camera = new THREE.PerspectiveCamera(
       60,
       this.container.clientWidth / this.container.clientHeight,
       0.1,
       1000,
     );
-    this.camera.position.set(60, 80, 80);
+    this.camera.position.set(160, 100, 80);
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
@@ -70,7 +71,7 @@ export class Scene3D {
     const ambientLight = new THREE.AmbientLight(0x400036, 0.9);
     this.scene.add(ambientLight);
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    const directionalLight = new THREE.DirectionalLight('#ffffff', 0.9);
     directionalLight.position.set(50, 100, 50);
     directionalLight.castShadow = true;
     directionalLight.shadow.mapSize.width = 2048;

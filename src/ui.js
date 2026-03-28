@@ -111,10 +111,11 @@ export class UIController {
       params.mu,
       params.radius,
       params.bankAngle,
+      params.mass,
+      params.surfaceType,
     );
 
-    this.elements.maxSpeed.textContent = `${stability.maxSpeed} km/h`;
-    console.log(stability.maxSpeed);
+    this.elements.maxSpeed.textContent = `${stability.maxSpeed.toFixed(1)} km/h`;
     this.elements.acceleration.textContent = `${stability.centripetalAcceleration.toFixed(2)} m/s²`;
     this.elements.status.textContent = stability.status;
     this.elements.safetyMargin.textContent = `${stability.safetyMargin.toFixed(1)}%`;
@@ -147,25 +148,22 @@ export class UIController {
 
   getParams() {
     const speed = parseInt(this.elements.speed.value);
-    const radiusFromSpeed = physics.calculateRadiusFromSpeed(
-      speed,
-      physics.getSurfaceCoefficient(this.elements.surfaceType.value),
-    );
+    const mass = parseInt(this.elements.mass.value);
     const radius = parseInt(this.elements.radius.value);
     const bankAngle = parseInt(this.elements.bank.value);
     const surfaceType = this.elements.surfaceType.value;
     const mu = physics.getSurfaceCoefficient(surfaceType);
-    const stability = physics.calculateStability(speed, mu, radius, bankAngle);
+    const stability = physics.calculateStability(speed, mu, radius, bankAngle, mass, surfaceType);
 
     return {
       vehicleType: this.elements.vehicleType.value,
-      mass: parseInt(this.elements.mass.value),
+      mass: mass,
       speed: speed,
       radiusFromSpeed: stability.radiusFromSpeed,
       radius: radius,
       bankAngle: bankAngle,
       surfaceType: surfaceType,
-      mu: mu,
+      mu: stability.effectiveMu,
       showRacingLine: this.elements.racingLine.checked,
       showForces: this.elements.showForces.checked,
       isStable: stability.isStable,
