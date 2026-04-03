@@ -256,3 +256,127 @@ input[type="checkbox"] {
 ::-webkit-scrollbar-thumb:hover {
   background: #0099cc;
 }
+
+.graphs-button {
+  width: 100%;
+  padding: 14px;
+  margin-top: 10px;
+  background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.graphs-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 20px rgba(155, 89, 182, 0.4);
+}
+
+#graph-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.graph-modal-content {
+  background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+  border-radius: 15px;
+  width: 90%;
+  max-width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
+}
+
+.graph-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 25px;
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+}
+
+.graph-modal-header h2 {
+  color: #00d4ff;
+  font-size: 1.3rem;
+  margin: 0;
+  text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+}
+
+.close-graph-btn {
+  background: transparent;
+  border: none;
+  color: #e74c3c;
+  font-size: 2rem;
+  cursor: pointer;
+  padding: 0 10px;
+  transition: transform 0.2s, color 0.2s;
+}
+
+.close-graph-btn:hover {
+  transform: scale(1.2);
+  color: #ff6b6b;
+}
+
+.graphs-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  padding: 25px;
+  max-height: calc(90vh - 80px);
+  overflow-y: auto;
+}
+
+.graph-wrapper {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 10px;
+  padding: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.graph-wrapper h3 {
+  color: #00d4ff;
+  font-size: 1rem;
+  margin-bottom: 15px;
+  text-align: center;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+}
+
+.graph-wrapper canvas {
+  display: block;
+  width: 100%;
+  height: 200px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 5px;
+}
+
+@media (max-width: 768px) {
+  .graphs-container {
+    grid-template-columns: 1fr;
+  }
+
+  .graph-modal-content {
+    width: 95%;
+    max-height: 95vh;
+  }
+}

@@ -22,6 +22,7 @@ export class Scene3D {
     this.trajectoryPoints = [];
     this.racingLinePoints = [];
     this.velocityLinePoints = [];
+    this.carTrajectory = [];
     this.skidOffset = 0;
     this.lastTime = 0;
     this.animationId = null;
@@ -42,7 +43,8 @@ export class Scene3D {
       0.1,
       1000,
     );
-    this.camera.position.set(160, 100, 80);
+    this.camera.position.set(0, 100, 0);
+    // this.camera.lookAt(50, 10, 1000); // та же XZ‑позиция, но ниже по Y
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
@@ -125,6 +127,7 @@ export class Scene3D {
     }
 
     this.vehicle.position.set(0, 0.5, 0);
+    this.vehicle.rotation.set(0, 0, 0);
     this.vehicle.castShadow = true;
     this.scene.add(this.vehicle);
   }
@@ -395,38 +398,41 @@ export class Scene3D {
     );
     this.scene.add(this.trajectoryLine);
 
-    if (showRacingLine) {
-      this.racingLinePoints = physics.generateRacingLine(radius, 100);
+    // Всегда генерируем гоночную линию
+    this.racingLinePoints = physics.generateRacingLine(radius, 100);
+    const racingGeometry = new THREE.BufferGeometry();
+    const racingPositions = this.racingLinePoints.map((p) => new THREE.Vector3(p.x, 0.15, p.z));
+    racingGeometry.setFromPoints(racingPositions);
 
-      const racingGeometry = new THREE.BufferGeometry();
-      const racingPositions = this.racingLinePoints.map((p) => new THREE.Vector3(p.x, 0.15, p.z));
-      racingGeometry.setFromPoints(racingPositions);
+    this.racingLine = new THREE.Line(
+      racingGeometry,
+      new THREE.LineBasicMaterial({ color: 0x00bfff, linewidth: 2 }),
+    );
+    this.scene.add(this.racingLine);
 
-      this.racingLine = new THREE.Line(
-        racingGeometry,
-        new THREE.LineBasicMaterial({ color: 0x00bfff, linewidth: 2 }),
+    // Генерируем линию оптимальной скорости (розовая)
+    if (radiusFromVelocity > radius) {
+      this.velocityLinePoints = physics.generateTrajectoryFromVelocity(
+        radius,
+        radiusFromVelocity,
+        100,
       );
-      this.scene.add(this.racingLine);
 
-      if (radiusFromVelocity > radius) {
-        this.velocityLinePoints = physics.generateTrajectoryFromVelocity(
-          radius,
-          radiusFromVelocity,
-          100,
-        );
+      const velocityGeometry = new THREE.BufferGeometry();
+      const velocityPositions = this.velocityLinePoints.map(
+        (p) => new THREE.Vector3(p.x, 0.2, p.z),
+      );
+      velocityGeometry.setFromPoints(velocityPositions);
 
-        const velocityGeometry = new THREE.BufferGeometry();
-        const velocityPositions = this.velocityLinePoints.map(
-          (p) => new THREE.Vector3(p.x, 0.2, p.z),
-        );
-        velocityGeometry.setFromPoints(velocityPositions);
+      this.velocityLine = new THREE.Line(
+        velocityGeometry,
+        new THREE.LineBasicMaterial({ color: 0xff00ff, linewidth: 2 }),
+      );
+      this.scene.add(this.velocityLine);
 
-        this.velocityLine = new THREE.Line(
-          velocityGeometry,
-          new THREE.LineBasicMaterial({ color: 0xff00ff, linewidth: 2 }),
-        );
-        this.scene.add(this.velocityLine);
-      }
+      this.carTrajectory = this.velocityLinePoints;
+    } else {
+      this.carTrajectory = this.racingLinePoints;
     }
   }
 
@@ -511,6 +517,7 @@ export class Scene3D {
     this.currentIndex = 0;
     this.skidOffset = 0;
     this.lastTime = performance.now();
+    this.params = params;
 
     this.setupTrajectory(params.radius, params.showRacingLine, params.radiusFromVelocity);
     this.setupActualPath();
@@ -521,9 +528,14 @@ export class Scene3D {
       this.trajectoryLine.material.color.setHex(0x00ff00);
     }
 
-    const initialPoint = this.trajectoryPoints[0];
+    const initialPoint = this.carTrajectory[0];
     this.vehicle.position.set(initialPoint.x, 0.5, initialPoint.z);
-    this.vehicle.rotation.y = Math.PI / 2;
+
+    const nextPoint = this.carTrajectory[1];
+    const dx = nextPoint.x - initialPoint.x;
+    const dz = nextPoint.z - initialPoint.z;
+    const targetAngle = Math.atan2(dz, dx);
+    this.vehicle.rotation.y = targetAngle;
 
     if (this.callbacks.onStart) {
       this.callbacks.onStart();
@@ -540,8 +552,10 @@ export class Scene3D {
   reset() {
     this.stopSimulation();
     this.vehicle.position.set(0, 0.5, 0);
-    this.vehicle.rotation.y = 0;
+    this.vehicle.rotation.set(0, 0, 0);
     this.vehicle.material?.emissive?.setHex(0x000000);
+    this.currentIndex = 0;
+    this.skidOffset = 0;
 
     if (this.actualPath) {
       this.scene.remove(this.actualPath);
@@ -563,7 +577,9 @@ export class Scene3D {
   }
 
   updateSimulation(dt, params, isStable) {
-    if (!this.isRunning || this.currentIndex >= this.trajectoryPoints.length) {
+    this.params = params;
+
+    if (!this.isRunning || this.currentIndex >= this.carTrajectory.length - 1) {
       if (this.callbacks && this.callbacks.onComplete) {
         this.callbacks.onComplete();
       }
@@ -574,12 +590,12 @@ export class Scene3D {
     const movementPerFrame = speedMs * dt;
 
     let totalMovement = 0;
-    while (
-      totalMovement < movementPerFrame &&
-      this.currentIndex < this.trajectoryPoints.length - 1
-    ) {
-      const current = this.trajectoryPoints[this.currentIndex];
-      const next = this.trajectoryPoints[this.currentIndex + 1];
+    let targetX = this.vehicle.position.x;
+    let targetZ = this.vehicle.position.z;
+
+    while (totalMovement < movementPerFrame && this.currentIndex < this.carTrajectory.length - 1) {
+      const current = this.carTrajectory[this.currentIndex];
+      const next = this.carTrajectory[this.currentIndex + 1];
 
       const dx = next.x - current.x;
       const dz = next.z - current.z;
@@ -589,49 +605,68 @@ export class Scene3D {
 
       if (remaining >= segmentLength) {
         totalMovement += segmentLength;
+        targetX = next.x;
+        targetZ = next.z;
         this.currentIndex++;
       } else {
         const ratio = remaining / segmentLength;
-        const targetX = current.x + dx * ratio;
-        const targetZ = current.z + dz * ratio;
-
-        if (!isStable) {
-          const skidFactor = 0.5 * (1 - (params.speed - params.maxSpeed) / params.speed);
-          this.skidOffset += (params.radius + 10 - params.radius) * dt * skidFactor;
-        }
-
-        this.vehicle.position.x =
-          targetX +
-          (isStable
-            ? 0
-            : this.skidOffset *
-              Math.cos((this.currentIndex / this.trajectoryPoints.length) * Math.PI));
-        this.vehicle.position.z = targetZ;
-
-        const bankRad = (params.bankAngle * Math.PI) / 180;
-        const bankEffect = Math.sin(bankRad) * 0.3;
-        this.vehicle.rotation.z = -bankEffect;
-
-        if (this.actualPath) {
-          this.actualPathPositions.push(this.vehicle.position.x, 0.1, this.vehicle.position.z);
-
-          const positions = this.actualPath.geometry.attributes.position.array;
-          for (let i = 0; i < this.actualPathPositions.length && i < positions.length; i++) {
-            positions[i] = this.actualPathPositions[i];
-          }
-          this.actualPath.geometry.attributes.position.needsUpdate = true;
-          this.actualPath.geometry.setDrawRange(0, this.actualPathPositions.length / 3);
-        }
-
+        targetX = current.x + dx * ratio;
+        targetZ = current.z + dz * ratio;
+        totalMovement += remaining;
+        this.currentIndex++;
         break;
       }
     }
 
-    if (this.currentIndex >= this.trajectoryPoints.length - 1) {
+    // Применяем позицию и снос один раз за кадр
+    let finalX = targetX;
+    let finalZ = targetZ;
+
+    if (!isStable && this.currentIndex > 0) {
+      const overrunFactor = Math.max(0, (params.speed - params.maxSpeed) / params.speed);
+      const driftSpeed = overrunFactor * dt * 10;
+      this.skidOffset += driftSpeed;
+
+      const distFromCenter = Math.sqrt(Math.pow(finalX - params.radius, 2) + finalZ * finalZ);
+      const outwardX = distFromCenter > 0.01 ? (finalX - params.radius) / distFromCenter : 0;
+      const outwardZ = distFromCenter > 0.01 ? finalZ / distFromCenter : 1;
+
+      finalX += outwardX * this.skidOffset;
+      finalZ += outwardZ * this.skidOffset;
+    }
+
+    this.vehicle.position.x = finalX;
+    this.vehicle.position.z = finalZ;
+
+    // Угол поворота
+    if (this.currentIndex < this.carTrajectory.length - 1) {
+      const next = this.carTrajectory[this.currentIndex + 1];
+      const dxDir = next.x - this.vehicle.position.x;
+      const dzDir = next.z - this.vehicle.position.z;
+      const targetAngle = Math.atan2(dzDir, dxDir);
+      this.vehicle.rotation.y = targetAngle;
+    }
+
+    const bankRad = (params.bankAngle * Math.PI) / 180;
+    const bankEffect = Math.sin(bankRad) * 0.3;
+    this.vehicle.rotation.z = -bankEffect;
+
+    if (this.actualPath) {
+      this.actualPathPositions.push(this.vehicle.position.x, 0.1, this.vehicle.position.z);
+
+      const positions = this.actualPath.geometry.attributes.position.array;
+      for (let i = 0; i < this.actualPathPositions.length && i < positions.length; i++) {
+        positions[i] = this.actualPathPositions[i];
+      }
+      this.actualPath.geometry.attributes.position.needsUpdate = true;
+      this.actualPath.geometry.setDrawRange(0, this.actualPathPositions.length / 3);
+    }
+
+    if (this.currentIndex >= this.carTrajectory.length - 1) {
       this.vehicle.position.set(
-        this.trajectoryPoints[this.trajectoryPoints.length - 1].x,
+        this.carTrajectory[this.carTrajectory.length - 1].x,
         0.5,
-        this.trajectoryPoints[this.trajectoryPoints.length - 1].z,
+        this.carTrajectory[this.carTrajectory.length - 1].z,
       );
       this.isRunning = false;
       if (this.callbacks && this.callbacks.onComplete) {
@@ -680,6 +715,7 @@ export class Scene3D {
   }
 
   getRenderedScene() {
+    console.log(this.camera);
     return {
       scene: this.scene,
       camera: this.camera,

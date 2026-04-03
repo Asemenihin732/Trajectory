@@ -116,13 +116,16 @@ export class UIController {
     );
 
     this.elements.maxSpeed.textContent = `${stability.maxSpeed.toFixed(1)} km/h`;
-    this.elements.acceleration.textContent = `${stability.centripetalAcceleration.toFixed(2)} m/s²`;
+    this.elements.acceleration.textContent = `${stability.centripetalAcceleration.toFixed(2)} м/с²`;
     this.elements.status.textContent = stability.status;
     this.elements.safetyMargin.textContent = `${stability.safetyMargin.toFixed(1)}%`;
     this.elements.radiusFromSpeed.textContent = `${stability.radiusFromSpeed.toFixed(1)} m`;
     this.elements.radiusFromSpeed.value = stability.radiusFromSpeed;
     if (this.callbacks.onRacingLineToggle) {
       this.callbacks.onRacingLineToggle(true, this.elements.radiusFromSpeed.value);
+    }
+    if (this.callbacks.onParamsChange) {
+      this.callbacks.onParamsChange(params);
     }
     this.updateStatusColor(stability.isStable, stability.safetyMargin);
   }

@@ -1,6 +1,7 @@
 import { Scene3D } from './scene.js';
 import { UIController } from './ui.js';
 import { physics } from './physics.js';
+import { graphWindow } from './graphs.js';
 
 class VehicleSimulator {
   constructor() {
@@ -16,6 +17,7 @@ class VehicleSimulator {
     const container = document.getElementById('canvas-container');
     this.scene3D = new Scene3D(container);
     this.ui = new UIController();
+    graphWindow.init();
 
     this.params = this.ui.getParams();
     this.scene3D.setupTrajectory(this.params.radius, this.params.showRacingLine, this.params.radiusFromSpeed);
@@ -23,6 +25,7 @@ class VehicleSimulator {
 
     this.setupUICallbacks();
     this.setupSceneCallbacks();
+    this.setupGraphsButton();
   }
 
   setupUICallbacks() {
@@ -73,6 +76,10 @@ class VehicleSimulator {
     this.ui.on('onReset', () => {
       this.reset();
     });
+
+    this.ui.on('onParamsChange', (params) => {
+      graphWindow.update(params);
+    });
   }
 
   setupSceneCallbacks() {
@@ -82,10 +89,19 @@ class VehicleSimulator {
     });
   }
 
+  setupGraphsButton() {
+    const graphsBtn = document.getElementById('graphs-btn');
+    graphsBtn.addEventListener('click', () => {
+      const params = this.ui.getParams();
+      graphWindow.open(params);
+    });
+  }
+
   startSimulation(params) {
     this.params = { ...params };
     this.isRunning = true;
     this.lastTime = performance.now();
+    this.accumulator = 0;
 
     this.scene3D.startSimulation(this.params, this.params.isStable);
 
@@ -100,17 +116,31 @@ class VehicleSimulator {
     }
 
     this.ui.setRunningState(true);
-    this.animate();
+    
+    if (this.animationId) {
+      clearInterval(this.animationId);
+    }
+    this.animationId = setInterval(() => this.animate(), 16);
   }
 
   animate() {
     if (!this.isRunning || !this.params) return;
 
     const currentTime = performance.now();
-    const dt = (currentTime - this.lastTime) / 1000;
+    let dt = (currentTime - this.lastTime) / 1000;
     this.lastTime = currentTime;
 
-    this.scene3D.updateSimulation(dt, this.params, this.params.isStable);
+    // Накапливаем время для плавного движения
+    this.accumulator = (this.accumulator || 0) + dt;
+    
+    // Фиксированный шаг симуляции
+    const fixedDt = 0.032;
+    
+    while (this.accumulator >= fixedDt) {
+      this.scene3D.updateSimulation(fixedDt, this.params, this.params.isStable);
+      this.accumulator -= fixedDt;
+    }
+
     this.scene3D.updateForceVectors(
       this.params.showForces,
       this.params.speed,
@@ -118,14 +148,14 @@ class VehicleSimulator {
       this.params.radius,
       this.params.bankAngle,
     );
-
-    this.animationId = requestAnimationFrame(() => this.animate());
   }
 
   reset() {
     this.isRunning = false;
+    this.accumulator = 0;
     if (this.animationId) {
-      cancelAnimationFrame(this.animationId);
+      clearInterval(this.animationId);
+      this.animationId = null;
     }
 
     if (this.params) {

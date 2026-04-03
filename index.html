@@ -33,8 +33,8 @@
         <label>Радиус поворота (м): <span id="radius-value">50</span></label>
         <input type="range" id="radius" min="10" max="200" value="50" step="5">
         
-        <label>Угол наклона (град.): <span id="bank-value">0</span></label>
-        <input type="range" id="bank" min="-30" max="30" value="0" step="1">
+        <label style="display: none;">Угол наклона (град.): <span id="bank-value">0</span></label>
+        <input type="range" id="bank" min="-30" max="30" value="0" step="1" style="display: none;" >
       </div>
 
       <div class="control-section">
@@ -53,14 +53,16 @@
           <input type="checkbox" id="racing-line"> Траектория опт. скорости
         </label>
         <label>
-          <input type="checkbox" id="show-forces"> Показать силы
+          <input type="checkbox" id="show-forces" style="display: none;"> Показать силы
         </label>
       </div>
 
-      <div class="control-section">
+      <div class="control-section" style="display: none;">
         <button id="start-btn">Запуск</button>
         <button id="reset-btn">Сброс</button>
       </div>
+
+      <button id="graphs-btn" class="graphs-button">Графики</button>
 
       <div class="info-section">
         <h3>Физика</h3>
@@ -76,7 +78,7 @@
           <span>а_центр:</span>
           <span id="acceleration">0 м/с²</span>
         </div>
-        <div class="info-row">
+        <div class="info-row" style="display: none;">
           <span>Status:</span>
           <span id="status">Stable</span>
         </div>
